@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35617.110
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CRD", "CRD\CRD.csproj", "{A491D5D1-0E7B-44BD-A6B1-488C6ACCB48D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A491D5D1-0E7B-44BD-A6B1-488C6ACCB48D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A491D5D1-0E7B-44BD-A6B1-488C6ACCB48D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A491D5D1-0E7B-44BD-A6B1-488C6ACCB48D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A491D5D1-0E7B-44BD-A6B1-488C6ACCB48D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9C38AF94-A7E2-4B1C-B5AE-DA6FED04B505}
+	EndGlobalSection
+EndGlobal
