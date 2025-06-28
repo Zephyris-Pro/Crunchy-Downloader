@@ -1,16 +1,15 @@
 name: Nightly Build
 
 on:
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
+  schedule:
+    # cronjob that triggers every day at 1PM UTC
+    - cron: "0 13 * * *"
+  workflow_dispatch:
 
 concurrency:
   group: nightly
   cancel-in-progress: true
+
 jobs:
   build_nightly:
     runs-on: windows-latest
@@ -102,10 +101,9 @@ jobs:
           name: Nightly [${{ needs.build_nightly.outputs.short_sha }}]
           body: |
             **This nightly build was generated automatically by GitHub Actions.**
-
             [URL to build](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
-            SHA256 checksum:
+            `CRD.exe` SHA256 checksum:
             ```
             ${{ steps.build_sha.outputs.build_sha }}
             ```
