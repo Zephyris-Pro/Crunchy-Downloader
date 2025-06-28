@@ -23,20 +23,10 @@ jobs:
 
       - name: Restore NuGet packages
         run: dotnet restore CRD.sln
-
+        
       - name: Publish CRD project as single .exe
-        run: dotnet publish CRD/CRD.csproj `
-             --configuration Release `
-             --runtime win-x64 `
-             --self-contained true `
-             /p:PublishSingleFile=true `
-             /p:IncludeAllContentForSelfExtract=false `
-             /p:PublishTrimmed=true `
-             /p:EnableCompressionInSingleFile=true `
-             /p:DebugType=portable `
-             /p:DebugSymbols=true `
-             --output ./publish
-
+        run: dotnet publish CRD/CRD.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeAllContentForSelfExtract=true --output ./publish
+        
       - name: Create ZIP with executable and PDB
         run: Compress-Archive -Path ./publish/CRD.exe, ./publish/CRD.pdb -DestinationPath ./CRD-win-x64.zip
 
