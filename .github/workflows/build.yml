@@ -11,6 +11,9 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    outputs:
+      full_sha: ${{ steps.vars.outputs.full_sha }}
+      short_sha: ${{ steps.vars.outputs.short_sha }}
 
     steps:
       - name: Checkout code
@@ -23,7 +26,7 @@ jobs:
 
       - name: Restore NuGet packages
         run: dotnet restore CRD.sln
-        
+
       - name: Publish CRD project as single .exe
         run: dotnet publish CRD/CRD.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeAllContentForSelfExtract=true --output ./publish
 
@@ -34,3 +37,83 @@ jobs:
           path: |
             ./publish/CRD.exe
             ./publish/CRD.pdb
+
+      - name: Generate build info
+        id: vars
+        run: |
+          echo "full_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+          echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+  recreate_release:
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Delete existing nightly release and tag if any
+        id: delete_release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const tag = "nightly";
+
+            // Find release by tag
+            const releases = await github.rest.repos.listReleases({ owner, repo });
+            const release = releases.data.find(r => r.tag_name === tag);
+
+            if (release) {
+              await github.rest.repos.deleteRelease({ owner, repo, release_id: release.id });
+              console.log(`Deleted release with ID ${release.id}`);
+            } else {
+              console.log("No existing release found");
+            }
+
+            // Delete tag
+            try {
+              await github.rest.git.deleteRef({ owner, repo, ref: `tags/${tag}` });
+              console.log(`Deleted tag ${tag}`);
+            } catch {
+              console.log(`No tag ${tag} to delete`);
+            }
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: CRD-win-x64
+          path: ./release_files
+
+      - name: Calculate SHA256 checksum
+        id: checksum
+        run: |
+          sha256sum ./release_files/CRD.exe > ./release_files/sha256.checksum
+          echo "sha256=$(cat ./release_files/sha256.checksum)" >> $GITHUB_OUTPUT
+          cat ./release_files/sha256.checksum
+
+      - name: Create Git tag 'nightly'
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git tag -f nightly
+          git push origin -f nightly
+
+      - name: Create or update nightly release
+        uses: softprops/action-gh-release@v2.2.2
+        with:
+          tag_name: nightly
+          name: Nightly [${{ needs.build.outputs.short_sha }}]
+          body: |
+            **This nightly build was generated automatically by GitHub Actions.**
+
+            Commit: `${{ needs.build.outputs.full_sha }}`
+
+            SHA256 checksum of CRD.exe:
+            ```
+            ${{ steps.checksum.outputs.sha256 }}
+            ```
+
+            You can download the attached artifacts to test the latest build.
+
+          files: ./release_files/CRD.exe, ./release_files/CRD.pdb
