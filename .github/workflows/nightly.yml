@@ -15,9 +15,9 @@ jobs:
   build_nightly:
     runs-on: windows-latest
     outputs:
-      full_sha: ${{ steps.vars.outputs.full_sha }}
-      short_sha: ${{ steps.vars.outputs.short_sha }}
-
+      full_sha: ${{ steps.var.outputs.full_sha }}
+      short_sha: ${{ steps.var.outputs.short_sha }}
+      
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -90,8 +90,9 @@ jobs:
       - name: Calculate SHA256 checksum
         id: build_sha
         run: |
-          sha256sum ./release_files/CRD.exe > ./release_files/sha256.checksum
-          echo "build_sha=$(cat ./release_files/sha256.checksum)" >> $GITHUB_OUTPUT
+          hash=$(sha256sum ./release_files/CRD.exe | awk '{ print $1 }')
+          echo "$hash" > ./release_files/sha256.checksum
+          echo "build_sha=$hash" >> $GITHUB_OUTPUT
           cat ./release_files/sha256.checksum
 
       - name: Create or update nightly release
@@ -110,7 +111,7 @@ jobs:
             ```
 
             You can download the attached artifacts to test the latest build.
-            Build artifacts ARE NOT guaranteed to be IDENTICAL to release assets, as release assets can be modified after they are uploaded.
+            Build artifacts **ARE NOT** guaranteed to be **IDENTICAL** to release assets, as release assets can be modified after they are uploaded.
 
             Full Commit Hash:
             ```
