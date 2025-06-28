@@ -26,12 +26,11 @@ jobs:
         
       - name: Publish CRD project as single .exe
         run: dotnet publish CRD/CRD.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeAllContentForSelfExtract=true --output ./publish
-        
-      - name: Create ZIP with executable and PDB
-        run: Compress-Archive -Path ./publish/CRD.exe, ./publish/CRD.pdb -DestinationPath ./CRD-win-x64.zip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: CRD-win-x64
-          path: ./CRD-win-x64.zip
+          path: |
+            ./publish/CRD.exe
+            ./publish/CRD.pdb
