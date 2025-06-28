@@ -24,9 +24,6 @@ jobs:
       - name: Restore NuGet packages
         run: dotnet restore CRD.sln
 
-      - name: Build the solution
-        run: dotnet build CRD.sln --configuration Release --no-restore
-
       - name: Publish CRD project as single .exe
         run: dotnet publish CRD/CRD.csproj `
              --configuration Release `
@@ -36,10 +33,15 @@ jobs:
              /p:IncludeAllContentForSelfExtract=false `
              /p:PublishTrimmed=true `
              /p:EnableCompressionInSingleFile=true `
+             /p:DebugType=portable `
+             /p:DebugSymbols=true `
              --output ./publish
 
-      - name: Upload executable artifact
+      - name: Create ZIP with executable and PDB
+        run: Compress-Archive -Path ./publish/CRD.exe, ./publish/CRD.pdb -DestinationPath ./CRD-win-x64.zip
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: CRD-win-x64
-          path: ./publish/CRD.exe
+          path: ./CRD-win-x64.zip
