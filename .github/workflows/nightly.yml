@@ -73,11 +73,12 @@ jobs:
 
       - name: Move build to platform-specific folder
         run: |
-          mkdir -p ./out/CRD-${{ matrix.rid }}
-          mv ./publish/CRD${{ matrix.ext }} ./out/CRD-${{ matrix.rid }}/
+          mkdir -p "./out/CRD-${{ matrix.rid }}"
+          mv ./publish/CRD${{ matrix.ext }} "./out/CRD-${{ matrix.rid }}/"
           if [ -f ./publish/CRD.pdb ]; then
-            mv ./publish/CRD.pdb ./out/CRD-${{ matrix.rid }}/
+            mv ./publish/CRD.pdb "./out/CRD-${{ matrix.rid }}/"
           fi
+        shell: bash
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
