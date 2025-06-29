@@ -63,7 +63,7 @@ jobs:
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: "8.0.x"
 
       - name: Restore NuGet packages
         run: dotnet restore CRD.sln
@@ -84,7 +84,6 @@ jobs:
           path: |
             ./publish/CRD-${{ matrix.rid }}${{ matrix.ext }}
             ./publish/CRD-${{ matrix.rid }}.pdb
-          
 
       - name: Generate build info
         id: var
@@ -137,9 +136,12 @@ jobs:
           for file in ./release_files/CRD-*/CRD*; do
             if [ -f "$file" ] && [ "${file##*.}" != "pdb" ]; then
               hash=$(sha256sum "$file" | awk '{ print $1 }')
-              checksums+="$hash"$'\n'
+              checksums+="**$(basename "$file")**: \`$hash\`"$'\n'
             fi
           done
+          if [ -n "$checksums" ]; then
+            checksums=${checksums%$'\n'}
+          fi
           echo "checksums<<EOF" >> $GITHUB_OUTPUT
           echo -e "$checksums" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -154,9 +156,7 @@ jobs:
             [Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
             SHA256 checksums:
-            ```
             ${{ steps.build_sha.outputs.checksums }}
-            ```
 
             You can download the attached artifacts to test the latest build.
             Build artifacts **ARE NOT** guaranteed to be **IDENTICAL** to release assets, as release assets can be modified after they are uploaded.
