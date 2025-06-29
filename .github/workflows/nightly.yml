@@ -1,43 +1,36 @@
 name: Nightly Build
 
 on:
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
+  schedule:
+    # cronjob that triggers every day at 1AM UTC
+    - cron: "0 1 * * *"
+  workflow_dispatch:
 
-# on:
-#   schedule:
-#     - cron: "0 1 * * *"
-#   workflow_dispatch:
-
-# concurrency:
-#   group: nightly
-#   cancel-in-progress: true
+concurrency:
+  group: nightly
+  cancel-in-progress: true
 
 jobs:
-  # check_recent_commit:
-  #   runs-on: ubuntu-latest
-  #   name: Check Recent Commit
-  #   outputs:
-  #     should_run: ${{ steps.should_run.outputs.should_run }}
-  #   steps:
-  #     - uses: actions/checkout@v4
+  check_recent_commit:
+    runs-on: ubuntu-latest
+    name: Check Recent Commit
+    outputs:
+      should_run: ${{ steps.should_run.outputs.should_run }}
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - id: should_run
-  #       name: Check if latest commit date is within the previous 24 hours
-  #       run: |
-  #         if [ -z "$(git rev-list --since="24 hours ago" --all)" ]; then
-  #           echo "should_run=false" >> $GITHUB_OUTPUT
-  #         else
-  #           echo "should_run=true" >> $GITHUB_OUTPUT
-  #         fi
+      - id: should_run
+        name: Check if latest commit date is within the previous 24 hours
+        run: |
+          if [ -z "$(git rev-list --since="24 hours ago" --all)" ]; then
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          else
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          fi
 
   build_nightly:
-    # needs: check_recent_commit
-    # if: needs.check_recent_commit.outputs.should_run == 'true'
+    needs: check_recent_commit
+    if: needs.check_recent_commit.outputs.should_run == 'true'
     name: Build on ${{ matrix.os }} (${{ matrix.rid }})
     runs-on: ${{ matrix.os }}
     strategy:
