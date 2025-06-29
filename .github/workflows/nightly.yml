@@ -101,18 +101,18 @@ jobs:
             const repo = context.repo.repo;
             const tag = "nightly";
 
-            const releases = await github.rest.repos.listReleases({owner: owner, repo: repo,});
+            const releases = await github.rest.repos.listReleases({owner: owner, repo: repo});
             const release = releases.data.find(release => release.tag_name === tag);
 
             if (release) {
-              await github.rest.repos.deleteRelease({owner: owner, repo: repo, release_id: release.id,});
+              await github.rest.repos.deleteRelease({owner: owner, repo: repo, release_id: release.id});
               console.log(`Deleted release with ID ${release.id}`);
             } else {
               console.log("No existing release found");
             }
 
             try {
-              await github.rest.git.deleteRef({owner: owner, repo: repo, ref: `tags/${tag}`,});
+              await github.rest.git.deleteRef({owner: owner, repo: repo, ref: `tags/${tag}`});
               console.log(`Deleted tag ${tag}`);
             } catch {
               console.log(`No tag ${tag} to delete`);
@@ -128,7 +128,11 @@ jobs:
         run: |
           cd ./release_files
           find . -type f \( -name "CRD*" ! -name "*.pdb" \) -exec sha256sum {} \; > sha256.checksum
-          echo "build_sha=$(cat sha256.checksum)" >> $GITHUB_OUTPUT
+          
+          echo "build_sha<<EOF" >> $GITHUB_OUTPUT
+          cat sha256.checksum >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
           cat sha256.checksum
 
       - name: Create or update nightly release
