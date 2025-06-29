@@ -1,25 +1,64 @@
 name: Nightly Build
 
 on:
-  schedule:
-    # cronjob that triggers every day at 1PM UTC
-    - cron: "0 13 * * *"
-  workflow_dispatch:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
 
-concurrency:
-  group: nightly
-  cancel-in-progress: true
+# on:
+#   schedule:
+#     - cron: "0 1 * * *"
+#   workflow_dispatch:
+
+# concurrency:
+#   group: nightly
+#   cancel-in-progress: true
 
 jobs:
+  # check_recent_commit:
+  #   runs-on: ubuntu-latest
+  #   name: Check Recent Commit
+  #   outputs:
+  #     should_run: ${{ steps.should_run.outputs.should_run }}
+  #   steps:
+  #     - uses: actions/checkout@v4
+
+  #     - id: should_run
+  #       name: Check if latest commit date is within the previous 24 hours
+  #       run: |
+  #         if [ -z "$(git rev-list --since="24 hours ago" --all)" ]; then
+  #           echo "should_run=false" >> $GITHUB_OUTPUT
+  #         else
+  #           echo "should_run=true" >> $GITHUB_OUTPUT
+  #         fi
+
   build_nightly:
-    runs-on: windows-latest
+    # needs: check_recent_commit
+    # if: needs.check_recent_commit.outputs.should_run == 'true'
+    name: Build on ${{ matrix.os }} (${{ matrix.rid }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+            ext: .exe
+          - os: ubuntu-latest
+            rid: linux-x64
+            ext: ""
+          - os: macos-latest
+            rid: osx-x64
+            ext: ""
     outputs:
       full_sha: ${{ steps.var.outputs.full_sha }}
       short_sha: ${{ steps.var.outputs.short_sha }}
-      
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v3
@@ -29,22 +68,22 @@ jobs:
       - name: Restore NuGet packages
         run: dotnet restore CRD.sln
 
-      - name: Publish CRD project as single .exe
-        run: dotnet publish CRD/CRD.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeAllContentForSelfExtract=true --output ./publish
+      - name: Publish CRD project
+        run: dotnet publish CRD/CRD.csproj -c Release -r ${{ matrix.rid }} --self-contained true /p:PublishSingleFile=true /p:IncludeAllContentForSelfExtract=true --output ./publish
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: CRD-win-x64
+          name: CRD-${{ matrix.rid }}
           path: |
-            ./publish/CRD.exe
+            ./publish/CRD${{ matrix.ext }}
             ./publish/CRD.pdb
 
       - name: Generate build info
         id: var
         run: |
-          echo "full_sha=$(git rev-parse HEAD)" >> $env:GITHUB_OUTPUT
-          echo "short_sha=$(git rev-parse --short HEAD)" >> $env:GITHUB_OUTPUT
+          echo "full_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+          echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
   recreate_release:
     name: Recreate Release
@@ -79,19 +118,18 @@ jobs:
               console.log(`No tag ${tag} to delete`);
             }
 
-      - name: Download artifacts
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          name: CRD-win-x64
           path: ./release_files
 
-      - name: Calculate SHA256 checksum
+      - name: Calculate SHA256 checksums
         id: build_sha
         run: |
-          hash=$(sha256sum ./release_files/CRD.exe | awk '{ print $1 }')
-          echo "$hash" > ./release_files/sha256.checksum
-          echo "build_sha=$hash" >> $GITHUB_OUTPUT
-          cat ./release_files/sha256.checksum
+          cd ./release_files
+          find . -type f \( -name "CRD*" ! -name "*.pdb" \) -exec sha256sum {} \; > sha256.checksum
+          echo "build_sha=$(cat sha256.checksum)" >> $GITHUB_OUTPUT
+          cat sha256.checksum
 
       - name: Create or update nightly release
         uses: softprops/action-gh-release@v2.2.2
@@ -100,9 +138,9 @@ jobs:
           name: Nightly [${{ needs.build_nightly.outputs.short_sha }}]
           body: |
             **This nightly build was generated automatically by GitHub Actions.**
-            [URL to build](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            [Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
-            `CRD.exe` SHA256 checksum:
+            SHA256 checksums:
             ```
             ${{ steps.build_sha.outputs.build_sha }}
             ```
@@ -115,6 +153,4 @@ jobs:
             ${{ needs.build_nightly.outputs.full_sha }}
             ```
 
-          files: |
-            ./release_files/CRD.exe
-            ./release_files/CRD.pdb
+          files: ./release_files/**/*
