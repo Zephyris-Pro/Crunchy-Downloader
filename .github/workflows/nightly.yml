@@ -71,20 +71,20 @@ jobs:
       - name: Publish CRD project
         run: dotnet publish CRD/CRD.csproj -c Release -r ${{ matrix.rid }} --self-contained true /p:PublishSingleFile=true /p:IncludeAllContentForSelfExtract=true --output ./publish
 
-      - name: Move build to platform-specific folder
+      - name: Rename Executable
         run: |
-          mkdir -p "./out/CRD-${{ matrix.rid }}"
-          mv ./publish/CRD${{ matrix.ext }} "./out/CRD-${{ matrix.rid }}/"
-          if [ -f ./publish/CRD.pdb ]; then
-            mv ./publish/CRD.pdb "./out/CRD-${{ matrix.rid }}/"
-          fi
+          mv ./publish/CRD${{ matrix.ext }} "./publish/CRD-${{ matrix.rid }}${{ matrix.ext }}"
+          mv ./publish/CRD.pdb "./publish/CRD-${{ matrix.rid }}.pdb"
         shell: bash
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: CRD-${{ matrix.rid }}
-          path: ./out/CRD-${{ matrix.rid }}
+          path: |
+            ./publish/CRD-${{ matrix.rid }}${{ matrix.ext }}
+            ./publish/CRD-${{ matrix.rid }}.pdb
+          
 
       - name: Generate build info
         id: var
@@ -133,12 +133,16 @@ jobs:
       - name: Calculate SHA256 checksums
         id: build_sha
         run: |
-          cd ./release_files
-          find . -type f \( -name "CRD*" ! -name "*.pdb" \) -exec sha256sum {} \; > sha256.checksum
+          checksums=""
+          for file in ./release_files/CRD-*/CRD*; do
+            if [ -f "$file" ] && [ "${file##*.}" != "pdb" ]; then
+              hash=$(sha256sum "$file" | awk '{ print $1 }')
+              checksums+="$hash"$'\n'
+            fi
+          done
           echo "checksums<<EOF" >> $GITHUB_OUTPUT
-          cat sha256.checksum >> $GITHUB_OUTPUT
+          echo -e "$checksums" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-          cat sha256.checksum
 
       - name: Create or update nightly release
         uses: softprops/action-gh-release@v2.2.2
