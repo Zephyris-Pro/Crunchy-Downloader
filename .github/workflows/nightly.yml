@@ -71,13 +71,19 @@ jobs:
       - name: Publish CRD project
         run: dotnet publish CRD/CRD.csproj -c Release -r ${{ matrix.rid }} --self-contained true /p:PublishSingleFile=true /p:IncludeAllContentForSelfExtract=true --output ./publish
 
+      - name: Move build to platform-specific folder
+        run: |
+          mkdir -p ./out/CRD-${{ matrix.rid }}
+          mv ./publish/CRD${{ matrix.ext }} ./out/CRD-${{ matrix.rid }}/
+          if [ -f ./publish/CRD.pdb ]; then
+            mv ./publish/CRD.pdb ./out/CRD-${{ matrix.rid }}/
+          fi
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: CRD-${{ matrix.rid }}
-          path: |
-            ./publish/CRD${{ matrix.ext }}
-            ./publish/CRD.pdb
+          path: ./out/CRD-${{ matrix.rid }}
 
       - name: Generate build info
         id: var
@@ -118,7 +124,7 @@ jobs:
               console.log(`No tag ${tag} to delete`);
             }
 
-      - name: Download all artifacts
+      - name: Download all artifacts into subfolders
         uses: actions/download-artifact@v4
         with:
           path: ./release_files
@@ -128,11 +134,9 @@ jobs:
         run: |
           cd ./release_files
           find . -type f \( -name "CRD*" ! -name "*.pdb" \) -exec sha256sum {} \; > sha256.checksum
-          
-          echo "build_sha<<EOF" >> $GITHUB_OUTPUT
+          echo "checksums<<EOF" >> $GITHUB_OUTPUT
           cat sha256.checksum >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-
           cat sha256.checksum
 
       - name: Create or update nightly release
@@ -146,7 +150,7 @@ jobs:
 
             SHA256 checksums:
             ```
-            ${{ steps.build_sha.outputs.build_sha }}
+            ${{ steps.build_sha.outputs.checksums }}
             ```
 
             You can download the attached artifacts to test the latest build.
