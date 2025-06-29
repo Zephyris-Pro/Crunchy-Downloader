@@ -1,3 +1,5 @@
+# Credits: https://github.com/YimMenu/YimMenuV2/blob/enhanced/.github/workflows/nightly.yml
+
 name: Nightly Build
 
 on:
