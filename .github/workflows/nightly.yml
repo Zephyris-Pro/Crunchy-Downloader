@@ -1,5 +1,3 @@
-# Credits: https://github.com/YimMenu/YimMenuV2/blob/enhanced/.github/workflows/nightly.yml
-
 name: Nightly Build
 
 on:
@@ -64,21 +62,23 @@ jobs:
         run: dotnet restore CRD.sln
 
       - name: Publish CRD project
-        run: dotnet publish CRD/CRD.csproj -c Release -r ${{ matrix.rid }} --self-contained true /p:PublishSingleFile=true /p:IncludeAllContentForSelfExtract=true --output ./publish
-
-      - name: Rename Executable
-        run: |
-          mv ./publish/CRD${{ matrix.ext }} "./publish/CRD-${{ matrix.rid }}${{ matrix.ext }}"
-          mv ./publish/CRD.pdb "./publish/CRD-${{ matrix.rid }}.pdb"
-        shell: bash
+        run: dotnet publish CRD/CRD.csproj -c Release -r ${{ matrix.rid }} --self-contained true /p:PublishSingleFile=true --output ./publish
+        
+      - name: Zip Content
+        uses: actions/checkout@master
+        with:
+          type: zip
+          filename: CRD-${{ matrix.rid }}.zip
+          directory: ./publish
+          path: ./zip
+          command: mkdir ./zip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: CRD-${{ matrix.rid }}
           path: |
-            ./publish/CRD-${{ matrix.rid }}${{ matrix.ext }}
-            ./publish/CRD-${{ matrix.rid }}.pdb
+            ./zip/CRD-${{ matrix.rid }}.zip
 
       - name: Generate build info
         id: var
@@ -128,8 +128,8 @@ jobs:
         id: build_sha
         run: |
           checksums=""
-          for file in ./release_files/CRD-*/CRD*; do
-            if [ -f "$file" ] && [ "${file##*.}" != "pdb" ]; then
+          for file in ./release_files/CRD-*/CRD-*; do
+            if [ -f "$file" ]; then
               hash=$(sha256sum "$file" | awk '{ print $1 }')
               checksums+="**$(basename "$file")**: \`$hash\`"$'\n'
             fi
@@ -147,16 +147,16 @@ jobs:
           tag_name: nightly
           name: Nightly [${{ needs.build_nightly.outputs.short_sha }}]
           body: |
-            **This nightly build was generated automatically by GitHub Actions.**
+            **🤖 This nightly build was generated automatically by GitHub Actions.**
             [Workflow Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
-            SHA256 checksums:
+            🛡 SHA256 checksums:
             ${{ steps.build_sha.outputs.checksums }}
 
             You can download the attached artifacts to test the latest build.
-            Build artifacts **ARE NOT** guaranteed to be **IDENTICAL** to release assets, as release assets can be modified after they are uploaded.
+            ⚠️ Build artifacts **ARE NOT** guaranteed to be **IDENTICAL** to release assets, as release assets can be modified after they are uploaded.
 
-            Full Commit Hash:
+            📝 Full Commit Hash:
             ```
             ${{ needs.build_nightly.outputs.full_sha }}
             ```
