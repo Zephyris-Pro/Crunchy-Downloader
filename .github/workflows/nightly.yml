@@ -64,8 +64,9 @@ jobs:
       - name: Publish CRD project
         run: dotnet publish CRD/CRD.csproj -c Release -r ${{ matrix.rid }} --self-contained true /p:PublishSingleFile=true --output ./publish
         
-      - name: Zip Content
-        uses: actions/checkout@master
+
+      - name: Archive Content
+        uses: thedoctor0/zip-release@0.7.5
         with:
           type: zip
           filename: CRD-${{ matrix.rid }}.zip
