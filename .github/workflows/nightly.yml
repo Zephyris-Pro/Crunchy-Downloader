@@ -71,10 +71,11 @@ jobs:
           filename: CRD-${{ matrix.rid }}.zip
           directory: ./publish
           path: .  
-          command: mkdir ../zip
 
       - name: Move Zip Archive to ./zip
-        run: mv ./publish/CRD-${{ matrix.rid }}.zip ./zip/
+        run: |
+          mkdir ./zip/
+          mv ./publish/CRD-${{ matrix.rid }}.zip ./zip/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
