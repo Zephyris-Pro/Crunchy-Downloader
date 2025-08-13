@@ -21,7 +21,6 @@ using CRD.Utils.Files;
 using CRD.Utils.HLS;
 using CRD.Utils.JsonConv;
 using CRD.Utils.Structs;
-using CRD.Utils.Structs.Crunchyroll;
 using FluentAvalonia.UI.Controls;
 using Microsoft.Win32;
 using Newtonsoft.Json;
@@ -624,7 +623,7 @@ public class Helpers{
     public static Dictionary<string, List<DownloadedMedia>> GroupByLanguageWithSubtitles(List<DownloadedMedia> allMedia){
         //Group by language
         var languageGroups = allMedia
-            .Where(media => media.Type != DownloadMediaType.Description &&
+            .Where(media => media.Type != DownloadMediaType.Description && media.Type != DownloadMediaType.Cover &&
                             (!string.IsNullOrEmpty(media.Lang?.CrLocale) ||
                              (media is{ Type: DownloadMediaType.Subtitle, RelatedVideoDownloadMedia: not null } &&
                               !string.IsNullOrEmpty(media.RelatedVideoDownloadMedia.Lang?.CrLocale)))
@@ -644,6 +643,15 @@ public class Helpers{
         if (descriptionMedia.Count > 0){
             foreach (var group in languageGroups.Values){
                 group.Add(descriptionMedia[0]);
+            }
+        }
+        
+        //Find and add Cover media to each group
+        var coverMedia = allMedia.Where(media => media.Type == DownloadMediaType.Cover).ToList();
+        
+        if (coverMedia.Count > 0){
+            foreach (var group in languageGroups.Values){
+                group.Add(coverMedia[0]);
             }
         }
 
@@ -852,12 +860,43 @@ public class Helpers{
         } else{
             throw new PlatformNotSupportedException();
         }
+        
+        try{
+            using (var process = new Process()){
+                process.StartInfo.FileName = shutdownCmd;
+                process.StartInfo.Arguments = shutdownArgs;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.RedirectStandardError = true;
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.CreateNoWindow = true;
 
-        Process.Start(new ProcessStartInfo{
-            FileName = shutdownCmd,
-            Arguments = shutdownArgs,
-            CreateNoWindow = true,
-            UseShellExecute = false
-        });
+                process.ErrorDataReceived += (sender, e) => {
+                    if (!string.IsNullOrEmpty(e.Data)){
+                        Console.Error.WriteLine($"{e.Data}");
+                    }
+                };
+                
+                process.OutputDataReceived += (sender, e) => {
+                    if (!string.IsNullOrEmpty(e.Data)){
+                            Console.Error.WriteLine(e.Data);
+                    }
+                };
+                
+                process.Start();
+
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
+
+                process.WaitForExit();
+
+                if (process.ExitCode != 0){
+                    Console.Error.WriteLine($"Shutdown failed with exit code {process.ExitCode}");
+                }
+                
+            }
+        } catch (Exception ex){
+            Console.Error.WriteLine($"Failed to start shutdown process: {ex.Message}");
+        }
+        
     }
 }

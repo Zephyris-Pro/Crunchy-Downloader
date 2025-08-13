@@ -165,7 +165,7 @@ public class CrMusic{
 
 
     public CrunchyEpMeta EpisodeMeta(CrunchyMusicVideo episodeP){
-        var images = (episodeP.Images?.Thumbnail ?? new List<Image>{ new Image{ Source = "/notFound.png" } });
+        var images = (episodeP.Images?.Thumbnail ??[new Image{ Source = "/notFound.jpg" }]);
 
         
         var epMeta = new CrunchyEpMeta();
@@ -178,7 +178,8 @@ public class CrMusic{
         epMeta.Season = "";
         epMeta.SeriesId = episodeP.GetSeriesId();
         epMeta.AbsolutEpisodeNumberE = "";
-        epMeta.Image = images[images.Count / 2].Source;
+        epMeta.Image = images.FirstOrDefault()?.Source ?? string.Empty;
+        epMeta.ImageBig = images.FirstOrDefault()?.Source ?? string.Empty;
         epMeta.DownloadProgress = new DownloadProgress(){
             IsDownloading = false,
             Done = false,
