@@ -12,7 +12,7 @@
              x:Class="CRD.Views.SeriesPageView">
 
     <UserControl.Resources>
-        <ui:UiListToStringConverter x:Key="UiListToStringConverter" />
+        <ui:UiEmptyToDefaultConverter x:Key="EmptyToDefault" />
         <ui:UiListHasElementsConverter x:Key="UiListHasElementsConverter" />
         <ui:UiEnumToBoolConverter x:Key="EnumToBoolConverter" />
     </UserControl.Resources>
@@ -42,9 +42,13 @@
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <Image Grid.Column="0" Margin="10" Source="{Binding SelectedSeries.ThumbnailImage}" Width="240"
-                               Height="360">
-                        </Image>
+                        <Button Grid.Column="0" Margin="10" Command="{Binding OpenSeriesDetails}"
+                                BorderThickness="0"
+                                Background="Transparent"
+                                Padding="0">
+                            <Image Source="{Binding SelectedSeries.ThumbnailImage}"
+                                   Width="240" Height="360"/>
+                        </Button>
 
 
                         <Grid Grid.Column="1">
@@ -139,7 +143,7 @@
 
                                 <StackPanel Orientation="Horizontal">
                                     <Button Command="{Binding UpdateData}" Margin="0 0 5  10">Refresh Series</Button>
-                                    
+
                                     <Button Margin="0 0 5 10" FontStyle="Italic"
                                             IsVisible="{Binding ShowFeaturedMusicButton}"
                                             VerticalAlignment="Center"
@@ -151,14 +155,16 @@
                                             <controls:SymbolIcon Symbol="Audio" FontSize="18" />
                                         </StackPanel>
                                     </Button>
-                                    
+
                                     <ToggleButton IsChecked="{Binding EditMode}" Margin="0 0 5  10">Edit</ToggleButton>
 
                                     <Button Margin="0 0 5 10" FontStyle="Italic"
                                             VerticalAlignment="Center"
                                             Command="{Binding OpenFolderDialogAsync}">
                                         <ToolTip.Tip>
-                                            <TextBlock Text="{Binding SelectedSeries.SeriesDownloadPath}" FontSize="15" />
+                                            <TextBlock Text="{Binding SelectedSeries.SeriesDownloadPath,
+                                            Converter={StaticResource EmptyToDefault},
+                                            ConverterParameter='No series path set'}" FontSize="15" />
                                         </ToolTip.Tip>
                                         <StackPanel Orientation="Horizontal">
                                             <controls:SymbolIcon Symbol="Folder" FontSize="18" />
@@ -339,31 +345,36 @@
                                     </StackPanel>
 
                                     <StackPanel IsVisible="{Binding EditMode}">
-                                        <Button Width="30" Height="30" Margin="0 0 10 0"
+                                        <Button Height="30" Margin="0 0 5 0"
                                                 BorderThickness="0"
                                                 IsVisible="{Binding SonarrConnected}"
                                                 Command="{Binding MatchSonarrSeries_Button}">
-                                            <Grid>
+
+                                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                                                 <controls:ImageIcon Source="../Assets/sonarr.png" Width="25" Height="25" />
-                                                <ToolTip.Tip>
-                                                    <TextBlock Text="Match Sonarr Series" FontSize="15" />
-                                                </ToolTip.Tip>
-                                            </Grid>
+                                                <TextBlock Text="Match" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                            <ToolTip.Tip>
+                                                <TextBlock Text="Match Sonarr Series" FontSize="15" />
+                                            </ToolTip.Tip>
+
                                         </Button>
                                     </StackPanel>
 
                                     <StackPanel IsVisible="{Binding EditMode}">
-                                        <Button Width="30" Height="30" Margin="0 0 10 0"
+                                        <Button Height="30" Margin="0 0 10 0"
                                                 BorderThickness="0"
                                                 IsVisible="{Binding SonarrConnected}"
                                                 Command="{Binding RefreshSonarrEpisodeMatch}">
-                                            <Grid>
 
+                                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                                                 <controls:ImageIcon Source="../Assets/sonarr.png" Width="25" Height="25" />
-                                                <ToolTip.Tip>
-                                                    <TextBlock Text="Refresh all Sonarr Episode matches" FontSize="15" />
-                                                </ToolTip.Tip>
-                                            </Grid>
+                                                <TextBlock Text="Refresh" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                            <ToolTip.Tip>
+                                                <TextBlock Text="Refresh all Sonarr Episode matches" FontSize="15" />
+                                            </ToolTip.Tip>
+
                                         </Button>
                                     </StackPanel>
 
@@ -636,7 +647,9 @@
                                                     Command="{Binding $parent[UserControl].((vm:SeriesPageViewModel)DataContext).OpenFolderDialogAsync}"
                                                     CommandParameter="{Binding .}">
                                                 <ToolTip.Tip>
-                                                    <TextBlock Text="{Binding SeasonDownloadPath}" FontSize="15" />
+                                                    <TextBlock Text="{Binding SeasonDownloadPath,
+                                                    Converter={StaticResource EmptyToDefault},
+                                                    ConverterParameter='No season path set'}" FontSize="15" />
                                                 </ToolTip.Tip>
                                                 <StackPanel Orientation="Horizontal">
                                                     <controls:SymbolIcon Symbol="Folder" FontSize="18" />

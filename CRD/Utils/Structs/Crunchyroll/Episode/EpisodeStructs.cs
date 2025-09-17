@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Avalonia.Media.Imaging;
 using CRD.Utils.Structs.Crunchyroll;
 using CRD.Utils.Structs.History;
 using Newtonsoft.Json;
@@ -383,12 +384,16 @@ public class CrunchyEpMeta{
     public bool Music{ get; set; }
 
     public string Resolution{ get; set; }
+    
+    public string AvailableQualities{ get; set; }
 
     public List<string> downloadedFiles{ get; set; } =[];
 
     public bool OnlySubs{ get; set; }
 
     public CrDownloadOptions? DownloadSettings;
+
+    public bool HighlightAllAvailable{ get; set; }
 }
 
 public class DownloadProgress{
